@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6-DOF Robotic Arm Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 2px solid #333;
+            display: inline-block;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+        }
+
+        canvas {
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: block;
+            cursor: move;
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            width: 100%;;
+            padding: 10px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .view-btn {
+            flex: 1;
+            padding: 8px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .view-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .toggle-labels {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .toggle-labels input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .explanation-section {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .explanation-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .explanation-section h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-section p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .explanation-section code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .explanation-section pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .formula {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>6-DOF Robotic Arm Simulator</h1>
+            <div class="subtitle">Interactive Forward Kinematics Visualization</div>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Controls -->
+            <div class="panel">
+                <h2>Joint Controls</h2>
+                <div id="active-controls"></div>
+
+                <h2 style="margin-top: 20px;">Quick Actions</h2>
+                <button onclick="homePosition()">Home Position (All 90°)</button>
+                <button onclick="printDHMatrix()">Print DH Parameters</button>
+            </div>
+
+            <!-- Center Panel: Visualization -->
+            <div class="canvas-container">
+                <canvas id="canvas" width="600" height="600"></canvas>
+                <div class="view-controls">
+                    <button class="view-btn" onclick="setView('top')">Top View</button>
+                    <button class="view-btn" onclick="setView('side')">Side View</button>
+                    <button class="view-btn" onclick="setView('iso')">Isometric</button>
+                </div>
+                <div class="toggle-labels">
+                    <input type="checkbox" id="show-labels" checked onchange="draw()">
+                    <label for="show-labels" style="cursor: pointer; margin: 0;">Show Labels</label>
+                </div>
+                <div class="toggle-labels">
+                    <input type="checkbox" id="show-lengths" onchange="draw()">
+                    <label for="show-lengths" style="cursor: pointer; margin: 0;">Show Link Lengths</label>
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                    <label style="font-size: 12px; font-weight: 600; margin-bottom: 5px; display: block;">Zoom: <span id="zoom-val">100%</span></label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="view-btn" onclick="adjustZoom(-0.1)" style="flex: 0;">-</button>
+                        <input type="range" id="zoom-slider" min="0.5" max="2.0" value="1.0" step="0.1" oninput="updateZoom()" style="flex: 1;">
+                        <button class="view-btn" onclick="adjustZoom(0.1)" style="flex: 0;">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Info -->
+            <div class="panel">
+                <h2>End Effector Position</h2>
+                <div class="info-box">
+                    <div class="info-row">
+                        <span class="info-label">X:</span>
+                        <span class="info-value" id="pos-x">0.00 mm</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Y:</span>
+                        <span class="info-value" id="pos-y">0.00 mm</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Z:</span>
+                        <span class="info-value" id="pos-z">0.00 mm</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Reach:</span>
+                        <span class="info-value" id="pos-dist">0.00 mm</span>
+                    </div>
+                </div>
+
+                <h2>Link Lengths (mm)</h2>
+                <div id="link-length-controls"></div>
+
+                <h2>DH Parameters</h2>
+                <div class="info-box" style="font-size: 10px; font-family: 'Courier New', monospace; overflow-x: auto;">
+                    <table id="dh-table" style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                        <thead>
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 6px; border: 1px solid #ddd;">i</th>
+                                <th style="padding: 6px; border: 1px solid #ddd;">θ Input</th>
+                                <th style="padding: 6px; border: 1px solid #ddd;">θ DH</th>
+                                <th style="padding: 6px; border: 1px solid #ddd;">d (mm)</th>
+                                <th style="padding: 6px; border: 1px solid #ddd;">a (mm)</th>
+                                <th style="padding: 6px; border: 1px solid #ddd;">α (deg)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dh-tbody" style="background: white;">
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 10px; font-size: 9px; line-height: 1.6; color: #666;">
+                        <strong>Legend:</strong><br>
+                        <span style="background: #e6f3ff; padding: 2px 4px; border: 1px solid #ddd;">Blue</span> = Joint angle from slider (θ Input)<br>
+                        <span style="background: #ffffcc; padding: 2px 4px; border: 1px solid #ddd;">Yellow</span> = DH angle (θ DH = θ Input + offset)<br>
+                        <span style="background: #ccffcc; padding: 2px 4px; border: 1px solid #ddd;">Green</span> = Fixed link length<br>
+                        <span style="background: white; padding: 2px 4px; border: 1px solid #ddd;">White</span> = Constant (0 or 90°)
+                    </div>
+                    <div style="margin-top: 10px; font-size: 9px; line-height: 1.6; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px;">
+                        <strong>Understanding θ (Theta):</strong><br>
+                        • <strong>θ Input</strong>: The angle you set with the slider (0° to 180°)<br>
+                        • <strong>θ DH</strong>: The actual DH parameter used in calculations<br>
+                        • For J1: θ DH = θ Input (no offset)<br>
+                        • For J2-J6: θ DH = θ Input - 90° (offset for neutral position)<br><br>
+                        <strong>Other DH Parameters:</strong><br>
+                        • <strong>d</strong>: Link offset along Z-axis<br>
+                        • <strong>a</strong>: Link length along X-axis<br>
+                        • <strong>α</strong>: Link twist around X-axis (constant)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kinematics Explanation Section -->
+    <div class="explanation-section">
+        <h2>Understanding 6-DOF Robotic Arm Kinematics</h2>
+        
+        <h3>1. What is Forward Kinematics?</h3>
+        <p>
+            Forward Kinematics (FK) is the process of calculating the position and orientation of the robot's end effector 
+            (gripper/tool) given the joint angles. In a 6-DOF (Degrees of Freedom) robotic arm, we have 6 joints that can move independently.
+        </p>
+
+        <h3>2. Joint Configuration</h3>
+        <p>Our 6-DOF arm consists of:</p>
+        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+            <li><strong>J1 (Base Rotation):</strong> Rotates the entire arm around the vertical Z-axis (yaw)</li>
+            <li><strong>J2 (Shoulder):</strong> Lifts/lowers the arm (pitch)</li>
+            <li><strong>J3 (Elbow):</strong> Bends the arm at the elbow (pitch)</li>
+            <li><strong>J4 (Wrist Pitch):</strong> Tilts the wrist up/down (pitch)</li>
+            <li><strong>J5 (Wrist Roll):</strong> Rotates the wrist (roll)</li>
+            <li><strong>J6 (Gripper):</strong> Rotates the end effector/gripper</li>
+        </ul>
+
+        <h3>3. The Mathematics Behind FK</h3>
+        <p>
+            The forward kinematics calculation uses trigonometry to compute the end effector position. 
+            Each joint contributes to the final position based on its angle and the length of the link it controls.
+        </p>
+
+        <div class="formula">
+            <strong>Key Principle:</strong> Each joint only affects the segments that come AFTER it in the kinematic chain.
+            <br><br>
+            For example:
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Moving J1 rotates the ENTIRE arm horizontally</li>
+                <li>Moving J2 affects everything from J2 onwards (but NOT J1)</li>
+                <li>Moving J3 affects everything from J3 onwards (but NOT J1 or J2)</li>
+                <li>And so on...</li>
+            </ul>
+        </div>
+
+        <h3>4. Position Calculation</h3>
+        <p>The end effector position is calculated using these formulas:</p>
+        
+        <pre><code>// Adjust angles (90° = neutral position for pitch joints)
+θ2_adj = θ2 - 90°
+θ3_adj = θ3 - 90°
+θ4_adj = θ4 - 90°
+θ5_adj = θ5 - 90°
+
+// Calculate horizontal reach (in XY plane)
+r = L1×cos(θ2_adj) + L2×cos(θ2_adj + θ3_adj) + 
+    L3×cos(θ2_adj + θ3_adj + θ4_adj) + 
+    L4×cos(θ2_adj + θ3_adj + θ4_adj + θ5_adj)
+
+// Final 3D position
+X = r × cos(θ1)
+Y = r × sin(θ1)
+Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) + 
+    L3×sin(θ2_adj + θ3_adj + θ4_adj) + 
+    L4×sin(θ2_adj + θ3_adj + θ4_adj + θ5_adj)</code></pre>
+
+        <h3>5. Understanding the Coordinate System</h3>
+        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+            <li><strong>X-axis (Red):</strong> Points to the right</li>
+            <li><strong>Y-axis (Green):</strong> Points forward</li>
+            <li><strong>Z-axis (Blue):</strong> Points upward</li>
+            <li><strong>Origin:</strong> At the base of the robot on the ground</li>
+        </ul>
+
+        <h3>6. Angle Conventions</h3>
+        <p>
+            <strong>J1 (Base Rotation):</strong>
+            <br>
+            • 0° = Arm points along <strong>+X axis</strong> (to the right)
+            <br>
+            • 90° = Arm points along <strong>+Y axis</strong> (forward)
+            <br>
+            • 180° = Arm points along <strong>-X axis</strong> (to the left)
+            <br>
+            • 270° = Arm points along <strong>-Y axis</strong> (backward)
+            <br><br>
+            <strong>J2-J6 (Pitch joints):</strong> 90° is the neutral/straight position. 
+            <br>
+            • <strong>0° = Points DOWNWARD</strong> (below horizontal)
+            <br>
+            • <strong>90° = Points HORIZONTAL</strong> (straight out, neutral position)
+            <br>
+            • <strong>180° = Points UPWARD</strong> (above horizontal)
+            <br><br>
+            <em>Note: For J2 (shoulder), 0° makes the arm hang down, 90° extends horizontally, 180° points up.</em>
+        </p>
+
+        <h3>7. Practical Applications</h3>
+        <p>
+            Understanding FK is crucial for:
+        </p>
+        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+            <li>Path planning and trajectory generation</li>
+            <li>Collision detection and avoidance</li>
+            <li>Workspace analysis (determining reachable positions)</li>
+            <li>Inverse kinematics validation</li>
+            <li>Robot simulation and visualization</li>
+        </ul>
+
+        <h3>8. Try It Yourself!</h3>
+        <p>
+            Use the simulator above to experiment with different joint angles and observe how they affect the end effector position. 
+            Notice how:
+        </p>
+        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
+            <li>J1 rotates the arm in a circle (changes X and Y, but not Z)</li>
+            <li>J2 primarily affects the height (Z) and horizontal reach</li>
+            <li>J3 and J4 fine-tune the position and orientation</li>
+            <li>J5 and J6 control the end effector orientation</li>
+        </ul>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let rotX = -78.0;
+        let rotY = -9.0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let showLabels = true;
+        let zoomLevel = 1.0;
+
+        const arm = {
+            joints: [90, 90, 90, 90, 90, 90],
+            lengths: [105, 129, 110, 150, 80, 60],
+            endEffector: { x: 0, y: 0, z: 0 }
+        };
+
+        const jointNames = ['Base (J1)', 'Shoulder (J2)', 'Elbow (J3)', 'Wrist Pitch (J4)', 'Wrist Roll (J5)', 'Gripper (J6)'];
+        const colors = ['#8B4513', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#9B59B6'];
+
+        function deg2rad(deg) {
+            return deg * Math.PI / 180;
+        }
+
+        function initControls() {
+            const container = document.getElementById('active-controls');
+            let html = '';
+            
+            for (let i = 0; i < 6; i++) {
+                html += `
+                    <div class="control-group">
+                        <label>
+                            <span class="color-indicator" style="background: ${colors[i]};"></span>
+                            ${jointNames[i]}
+                        </label>
+                        <div class="control-row">
+                            <input type="range" id="j${i+1}" min="0" max="180" value="${arm.joints[i]}" step="1" oninput="updateJoint(${i})">
+                            <span class="value-display" id="j${i+1}-val">${arm.joints[i]}°</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            
+            // Initialize link length controls
+            const linkContainer = document.getElementById('link-length-controls');
+            const linkNames = ['Base Height', 'Shoulder', 'Elbow', 'Wrist', 'Wrist 2', 'Gripper'];
+            let linkHtml = '';
+            
+            for (let i = 0; i < 6; i++) {
+                linkHtml += `
+                    <div class="control-group">
+                        <label style="font-size: 11px;">
+                            L${i}: ${linkNames[i]}
+                        </label>
+                        <div class="control-row">
+                            <input type="range" id="l${i}" min="10" max="300" value="${arm.lengths[i]}" step="1" oninput="updateLength(${i})">
+                            <span class="value-display" id="l${i}-val" style="font-size: 11px;">${arm.lengths[i]}mm</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            linkContainer.innerHTML = linkHtml;
+        }
+
+        function updateLength(index) {
+            const slider = document.getElementById(`l${index}`);
+            arm.lengths[index] = parseFloat(slider.value);
+            document.getElementById(`l${index}-val`).textContent = arm.lengths[index] + 'mm';
+            forwardKinematics();
+            updateDisplay();
+            draw();
+        }
+
+        function updateJoint(index) {
+            const slider = document.getElementById(`j${index + 1}`);
+            arm.joints[index] = parseFloat(slider.value);
+            document.getElementById(`j${index + 1}-val`).textContent = arm.joints[index] + '°';
+            forwardKinematics();
+            updateDisplay();
+            draw();
+        }
+
+        function forwardKinematics() {
+            const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints.map(deg2rad);
+            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
+
+            // Adjust angles: 90° = straight/neutral position for pitch joints
+            const θ2_adj = θ2 - Math.PI / 2;
+            const θ3_adj = θ3 - Math.PI / 2;
+            const θ4_adj = θ4 - Math.PI / 2;
+            const θ5_adj = θ5 - Math.PI / 2;
+
+            // Calculate horizontal reach in the XY plane
+            const r = l1 * Math.cos(θ2_adj) + 
+                      l2 * Math.cos(θ2_adj + θ3_adj) + 
+                      l3 * Math.cos(θ2_adj + θ3_adj + θ4_adj) + 
+                      l4 * Math.cos(θ2_adj + θ3_adj + θ4_adj + θ5_adj);
+            
+            // Rotate by base angle θ1
+            // θ1 = 0° points along +X axis
+            // θ1 = 90° points along +Y axis
+            arm.endEffector.x = r * Math.cos(θ1);
+            arm.endEffector.y = r * Math.sin(θ1);
+            arm.endEffector.z = l0 + 
+                                l1 * Math.sin(θ2_adj) + 
+                                l2 * Math.sin(θ2_adj + θ3_adj) + 
+                                l3 * Math.sin(θ2_adj + θ3_adj + θ4_adj) + 
+                                l4 * Math.sin(θ2_adj + θ3_adj + θ4_adj + θ5_adj);
+
+            // Debug output
+            console.log(`FK: θ1=${arm.joints[0]}° r=${r.toFixed(2)}mm → X=${arm.endEffector.x.toFixed(2)}, Y=${arm.endEffector.y.toFixed(2)}, Z=${arm.endEffector.z.toFixed(2)}`);
+
+            return arm.endEffector;
+        }
+
+        function updateDisplay() {
+            document.getElementById('pos-x').textContent = arm.endEffector.x.toFixed(2) + ' mm';
+            document.getElementById('pos-y').textContent = arm.endEffector.y.toFixed(2) + ' mm';
+            document.getElementById('pos-z').textContent = arm.endEffector.z.toFixed(2) + ' mm';
+            
+            const dist = Math.sqrt(
+                arm.endEffector.x ** 2 + 
+                arm.endEffector.y ** 2 + 
+                arm.endEffector.z ** 2
+            );
+            document.getElementById('pos-dist').textContent = dist.toFixed(2) + ' mm';
+            
+            updateDHTable();
+        }
+
+        function updateDHTable() {
+            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
+            const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints;
+            
+            const dhParams = [
+                { i: 1, thetaInput: θ1, thetaOffset: 0, thetaDH: θ1, d: l0, a: 0, alpha: 90 },
+                { i: 2, thetaInput: θ2, thetaOffset: -90, thetaDH: θ2 - 90, d: 0, a: l1, alpha: 0 },
+                { i: 3, thetaInput: θ3, thetaOffset: -90, thetaDH: θ3 - 90, d: 0, a: l2, alpha: 0 },
+                { i: 4, thetaInput: θ4, thetaOffset: -90, thetaDH: θ4 - 90, d: 0, a: l3, alpha: 0 },
+                { i: 5, thetaInput: θ5, thetaOffset: -90, thetaDH: θ5 - 90, d: 0, a: l4, alpha: 0 },
+                { i: 6, thetaInput: θ6, thetaOffset: -90, thetaDH: θ6 - 90, d: 0, a: l5, alpha: 0 }
+            ];
+            
+            const tbody = document.getElementById('dh-tbody');
+            tbody.innerHTML = '';
+            
+            dhParams.forEach((param, index) => {
+                const row = tbody.insertRow();
+                row.style.borderBottom = '1px solid #ddd';
+                
+                // Joint number
+                const cellI = row.insertCell();
+                cellI.textContent = param.i;
+                cellI.style.padding = '6px';
+                cellI.style.textAlign = 'center';
+                cellI.style.border = '1px solid #ddd';
+                cellI.style.fontWeight = 'bold';
+                cellI.style.background = '#f0f0f0';
+                
+                // Theta Input (from slider)
+                const cellThetaInput = row.insertCell();
+                cellThetaInput.textContent = param.thetaInput.toFixed(1) + '°';
+                cellThetaInput.style.padding = '6px';
+                cellThetaInput.style.textAlign = 'right';
+                cellThetaInput.style.border = '1px solid #ddd';
+                cellThetaInput.style.background = '#e6f3ff'; // Light blue for input
+                cellThetaInput.style.fontWeight = 'bold';
+                
+                // Theta DH (calculated: input + offset)
+                const cellThetaDH = row.insertCell();
+                if (index === 0) {
+                    cellThetaDH.textContent = param.thetaDH.toFixed(2) + '°';
+                } else {
+                    cellThetaDH.innerHTML = `${param.thetaDH.toFixed(2)}°<br><span style="font-size: 8px; color: #666;">(${param.thetaInput.toFixed(0)}°${param.thetaOffset}°)</span>`;
+                }
+                cellThetaDH.style.padding = '6px';
+                cellThetaDH.style.textAlign = 'right';
+                cellThetaDH.style.border = '1px solid #ddd';
+                cellThetaDH.style.background = '#ffffcc'; // Yellow for DH value
+                cellThetaDH.style.fontWeight = 'bold';
+                cellThetaDH.style.fontSize = '10px';
+                cellThetaDH.style.lineHeight = '1.3';
+                
+                // d (fixed for J2-J6, variable for J1)
+                const cellD = row.insertCell();
+                cellD.textContent = param.d.toFixed(2);
+                cellD.style.padding = '6px';
+                cellD.style.textAlign = 'right';
+                cellD.style.border = '1px solid #ddd';
+                if (index === 0) {
+                    cellD.style.background = '#ccffcc'; // Green for fixed link length
+                    cellD.style.fontWeight = 'bold';
+                } else {
+                    cellD.style.background = 'white';
+                }
+                
+                // a (fixed - link length)
+                const cellA = row.insertCell();
+                cellA.textContent = param.a.toFixed(2);
+                cellA.style.padding = '6px';
+                cellA.style.textAlign = 'right';
+                cellA.style.border = '1px solid #ddd';
+                if (param.a > 0) {
+                    cellA.style.background = '#ccffcc'; // Green for fixed link length
+                    cellA.style.fontWeight = 'bold';
+                } else {
+                    cellA.style.background = 'white';
+                }
+                
+                // Alpha (constant)
+                const cellAlpha = row.insertCell();
+                cellAlpha.textContent = param.alpha.toFixed(2);
+                cellAlpha.style.padding = '6px';
+                cellAlpha.style.textAlign = 'right';
+                cellAlpha.style.border = '1px solid #ddd';
+                cellAlpha.style.background = 'white';
+            });
+        }
+
+        function homePosition() {
+            // Home position: all joints at 90° (horizontal, pointing along +Y)
+            arm.joints = [90, 90, 90, 90, 90, 90];
+            initControls();
+            forwardKinematics();
+            updateDisplay();
+            draw();
+        }
+
+        function printDHMatrix() {
+            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
+            const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints;
+            
+            console.log('\n========================================');
+            console.log('DENAVIT-HARTENBERG PARAMETERS');
+            console.log('========================================');
+            console.log('Modified DH Convention');
+            console.log('');
+            console.log('Current Joint Angles:');
+            console.log(`  J1 = ${θ1}°`);
+            console.log(`  J2 = ${θ2}°`);
+            console.log(`  J3 = ${θ3}°`);
+            console.log(`  J4 = ${θ4}°`);
+            console.log(`  J5 = ${θ5}°`);
+            console.log(`  J6 = ${θ6}°`);
+            console.log('');
+            console.log('DH Parameters Table:');
+            console.log('┌────┬────────────┬────────────┬────────────┬────────────┐');
+            console.log('│ i  │  θ (deg)   │  d (mm)    │  a (mm)    │  α (deg)   │');
+            console.log('├────┼────────────┼────────────┼────────────┼────────────┤');
+            console.log(`│ 1  │ ${θ1.toFixed(2).padStart(10)} │ ${l0.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${(90).toFixed(2).padStart(10)} │`);
+            console.log(`│ 2  │ ${(θ2-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l1.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
+            console.log(`│ 3  │ ${(θ3-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l2.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
+            console.log(`│ 4  │ ${(θ4-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l3.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
+            console.log(`│ 5  │ ${(θ5-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l4.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
+            console.log(`│ 6  │ ${(θ6-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l5.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
+            console.log('└────┴────────────┴────────────┴────────────┴────────────┘');
+            console.log('');
+            console.log('Parameter Definitions:');
+            console.log('  θ (theta) = Joint angle (rotation about Z-axis)');
+            console.log('  d         = Link offset (translation along Z-axis)');
+            console.log('  a         = Link length (translation along X-axis)');
+            console.log('  α (alpha) = Link twist (rotation about X-axis)');
+            console.log('');
+            console.log('Python/NumPy Format:');
+            console.log('import numpy as np');
+            console.log('');
+            console.log('dh_params = np.array([');
+            console.log(`    [${θ1.toFixed(2)}, ${l0.toFixed(2)}, 0.00, 90.00],   # Joint 1`);
+            console.log(`    [${(θ2-90).toFixed(2)}, 0.00, ${l1.toFixed(2)}, 0.00],    # Joint 2`);
+            console.log(`    [${(θ3-90).toFixed(2)}, 0.00, ${l2.toFixed(2)}, 0.00],    # Joint 3`);
+            console.log(`    [${(θ4-90).toFixed(2)}, 0.00, ${l3.toFixed(2)}, 0.00],    # Joint 4`);
+            console.log(`    [${(θ5-90).toFixed(2)}, 0.00, ${l4.toFixed(2)}, 0.00],    # Joint 5`);
+            console.log(`    [${(θ6-90).toFixed(2)}, 0.00, ${l5.toFixed(2)}, 0.00]     # Joint 6`);
+            console.log('])');
+            console.log('');
+            console.log('MATLAB Format:');
+            console.log('DH = [');
+            console.log(`    ${θ1.toFixed(2)}, ${l0.toFixed(2)}, 0.00, 90.00;   % Joint 1`);
+            console.log(`    ${(θ2-90).toFixed(2)}, 0.00, ${l1.toFixed(2)}, 0.00;    % Joint 2`);
+            console.log(`    ${(θ3-90).toFixed(2)}, 0.00, ${l2.toFixed(2)}, 0.00;    % Joint 3`);
+            console.log(`    ${(θ4-90).toFixed(2)}, 0.00, ${l3.toFixed(2)}, 0.00;    % Joint 4`);
+            console.log(`    ${(θ5-90).toFixed(2)}, 0.00, ${l4.toFixed(2)}, 0.00;    % Joint 5`);
+            console.log(`    ${(θ6-90).toFixed(2)}, 0.00, ${l5.toFixed(2)}, 0.00     % Joint 6`);
+            console.log('];');
+            console.log('');
+            console.log('End Effector Position (from FK):');
+            console.log(`  X = ${arm.endEffector.x.toFixed(2)} mm`);
+            console.log(`  Y = ${arm.endEffector.y.toFixed(2)} mm`);
+            console.log(`  Z = ${arm.endEffector.z.toFixed(2)} mm`);
+            console.log('========================================\n');
+        }
+
+        function project3D(x, y, z) {
+            const maxReach = 600;
+            const padding = 50;
+            const availableSize = Math.min(canvas.width, canvas.height) - padding * 2;
+            const scale = (availableSize / maxReach) * zoomLevel;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const radX = deg2rad(rotX);
+            const radY = deg2rad(rotY);
+            
+            const cosX = Math.cos(radX);
+            const sinX = Math.sin(radX);
+            const cosY = Math.cos(radY);
+            const sinY = Math.sin(radY);
+            
+            let y1 = y * cosX - z * sinX;
+            let z1 = y * sinX + z * cosX;
+            
+            let x2 = x * cosY + z1 * sinY;
+            let z2 = -x * sinY + z1 * cosY;
+            
+            return {
+                x: centerX + x2 * scale,
+                y: centerY - y1 * scale
+            };
+        }
+
+        function drawLine3D(x1, y1, z1, x2, y2, z2, color, width) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        function drawJoint(x, y, z, radius, color) {
+            const p = project3D(x, y, z);
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawLabel(x, y, z, text, color = '#000') {
+            if (!showLabels) return;
+            
+            const p = project3D(x, y, z);
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.5;
+            
+            const padding = 8;
+            ctx.font = 'bold 14px Arial';
+            const textWidth = ctx.measureText(text).width;
+            const boxWidth = textWidth + padding * 2;
+            const boxHeight = 24;
+            
+            ctx.fillRect(p.x - boxWidth/2, p.y - boxHeight/2 - 25, boxWidth, boxHeight);
+            ctx.strokeRect(p.x - boxWidth/2, p.y - boxHeight/2 - 25, boxWidth, boxHeight);
+            
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, p.x, p.y - 13);
+        }
+
+        function drawLinkLength(x1, y1, z1, x2, y2, z2, length, color = '#000') {
+            const showLengths = document.getElementById('show-lengths').checked;
+            if (!showLengths) return;
+            
+            // Calculate midpoint
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            const midZ = (z1 + z2) / 2;
+            
+            const p = project3D(midX, midY, midZ);
+            
+            // Draw length label
+            const text = `${length.toFixed(0)}mm`;
+            ctx.font = 'bold 12px Arial';
+            const textWidth = ctx.measureText(text).width;
+            const padding = 6;
+            const boxWidth = textWidth + padding * 2;
+            const boxHeight = 20;
+            
+            // Background
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.95)';
+            ctx.fillRect(p.x - boxWidth/2, p.y - boxHeight/2, boxWidth, boxHeight);
+            
+            // Border
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p.x - boxWidth/2, p.y - boxHeight/2, boxWidth, boxHeight);
+            
+            // Text
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, p.x, p.y);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            showLabels = document.getElementById('show-labels').checked;
+            
+            drawGrid();
+            
+            const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints.map(deg2rad);
+            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
+            
+            const θ2_adj = θ2 - Math.PI / 2;
+            const θ3_adj = θ3 - Math.PI / 2;
+            const θ4_adj = θ4 - Math.PI / 2;
+            const θ5_adj = θ5 - Math.PI / 2;
+            
+            const cosθ1 = Math.cos(θ1);
+            const sinθ1 = Math.sin(θ1);
+            
+            // Calculate all joint positions
+            const positions = [
+                { x: 0, y: 0, z: 0 },  // Ground
+                { x: 0, y: 0, z: l0 }  // J1 (top of base - always fixed)
+            ];
+            
+            // J2 position
+            const r1 = l1 * Math.cos(θ2_adj);
+            positions.push({
+                x: r1 * cosθ1,
+                y: r1 * sinθ1,
+                z: l0 + l1 * Math.sin(θ2_adj)
+            });
+            
+            console.log(`J2 position: θ1=${(θ1*180/Math.PI).toFixed(1)}°, r1=${r1.toFixed(2)}, x=${(r1 * cosθ1).toFixed(2)}, y=${(r1 * sinθ1).toFixed(2)}`);
+            
+            // J3 position
+            const r2 = l1 * Math.cos(θ2_adj) + l2 * Math.cos(θ2_adj + θ3_adj);
+            positions.push({
+                x: r2 * cosθ1,
+                y: r2 * sinθ1,
+                z: l0 + l1 * Math.sin(θ2_adj) + l2 * Math.sin(θ2_adj + θ3_adj)
+            });
+            
+            // J4 position
+            const r3 = l1 * Math.cos(θ2_adj) + l2 * Math.cos(θ2_adj + θ3_adj) + l3 * Math.cos(θ2_adj + θ3_adj + θ4_adj);
+            positions.push({
+                x: r3 * cosθ1,
+                y: r3 * sinθ1,
+                z: l0 + l1 * Math.sin(θ2_adj) + l2 * Math.sin(θ2_adj + θ3_adj) + l3 * Math.sin(θ2_adj + θ3_adj + θ4_adj)
+            });
+            
+            // J5 position
+            const r4 = l1 * Math.cos(θ2_adj) + l2 * Math.cos(θ2_adj + θ3_adj) + l3 * Math.cos(θ2_adj + θ3_adj + θ4_adj) + l4 * Math.cos(θ2_adj + θ3_adj + θ4_adj + θ5_adj);
+            positions.push({
+                x: r4 * cosθ1,
+                y: r4 * sinθ1,
+                z: l0 + l1 * Math.sin(θ2_adj) + l2 * Math.sin(θ2_adj + θ3_adj) + l3 * Math.sin(θ2_adj + θ3_adj + θ4_adj) + l4 * Math.sin(θ2_adj + θ3_adj + θ4_adj + θ5_adj)
+            });
+            
+            // J6/End effector position (same as J5 for now, J6 only rotates)
+            positions.push({
+                x: r4 * cosθ1,
+                y: r4 * sinθ1,
+                z: l0 + l1 * Math.sin(θ2_adj) + l2 * Math.sin(θ2_adj + θ3_adj) + l3 * Math.sin(θ2_adj + θ3_adj + θ4_adj) + l4 * Math.sin(θ2_adj + θ3_adj + θ5_adj)
+            });
+            
+            // Draw base pillar
+            const baseWidth = 40;
+            const baseDepth = 40;
+            const baseHeight = l0;
+            
+            const pillarCorners = [
+                { x: -baseWidth/2, y: -baseDepth/2, z: 0 },
+                { x: baseWidth/2, y: -baseDepth/2, z: 0 },
+                { x: baseWidth/2, y: baseDepth/2, z: 0 },
+                { x: -baseWidth/2, y: baseDepth/2, z: 0 },
+                { x: -baseWidth/2, y: -baseDepth/2, z: baseHeight },
+                { x: baseWidth/2, y: -baseDepth/2, z: baseHeight },
+                { x: baseWidth/2, y: baseDepth/2, z: baseHeight },
+                { x: -baseWidth/2, y: baseDepth/2, z: baseHeight }
+            ];
+            
+            const projectedCorners = pillarCorners.map(c => project3D(c.x, c.y, c.z));
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.moveTo(projectedCorners[0].x, projectedCorners[0].y);
+            ctx.lineTo(projectedCorners[1].x, projectedCorners[1].y);
+            ctx.lineTo(projectedCorners[2].x, projectedCorners[2].y);
+            ctx.lineTo(projectedCorners[3].x, projectedCorners[3].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#A0826D';
+            ctx.beginPath();
+            ctx.moveTo(projectedCorners[4].x, projectedCorners[4].y);
+            ctx.lineTo(projectedCorners[5].x, projectedCorners[5].y);
+            ctx.lineTo(projectedCorners[6].x, projectedCorners[6].y);
+            ctx.lineTo(projectedCorners[7].x, projectedCorners[7].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(projectedCorners[i].x, projectedCorners[i].y);
+                ctx.lineTo(projectedCorners[i + 4].x, projectedCorners[i + 4].y);
+                ctx.stroke();
+            }
+            
+            drawLabel(0, 0, baseHeight, 'BASE', '#8B4513');
+            
+            // Draw base height label
+            drawLinkLength(0, 0, 0, 0, 0, baseHeight, arm.lengths[0], '#8B4513');
+            
+            // Draw links with length labels
+            for (let i = 1; i < positions.length - 1; i++) {
+                drawLine3D(
+                    positions[i].x, positions[i].y, positions[i].z,
+                    positions[i + 1].x, positions[i + 1].y, positions[i + 1].z,
+                    colors[i], 10
+                );
+                
+                // Draw link length label
+                drawLinkLength(
+                    positions[i].x, positions[i].y, positions[i].z,
+                    positions[i + 1].x, positions[i + 1].y, positions[i + 1].z,
+                    arm.lengths[i], // L1, L2, L3, L4, L5
+                    colors[i]
+                );
+            }
+            
+            // Draw joints
+            const jointLabels = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6'];
+            for (let i = 1; i < positions.length; i++) {
+                drawJoint(positions[i].x, positions[i].y, positions[i].z, 10, colors[i-1]);
+                drawLabel(positions[i].x, positions[i].y, positions[i].z, jointLabels[i-1], colors[i-1]);
+            }
+            
+            // Draw end effector
+            const lastPos = positions[positions.length - 1];
+            drawJoint(lastPos.x, lastPos.y, lastPos.z, 14, '#FF4757');
+            drawLabel(lastPos.x, lastPos.y, lastPos.z, 'END', '#FF4757');
+        }
+
+        function drawGrid() {
+            const gridSize = 100;
+            const gridCount = 6;
+            
+            for (let i = -gridCount; i <= gridCount; i++) {
+                const isMainGrid = i % 2 === 0;
+                const lineWidth = isMainGrid ? 1.5 : 1;
+                const alpha = isMainGrid ? 0.3 : 0.15;
+                
+                drawLine3D(
+                    i * gridSize, -gridCount * gridSize, 0,
+                    i * gridSize, gridCount * gridSize, 0,
+                    `rgba(101, 67, 33, ${alpha})`, lineWidth
+                );
+                drawLine3D(
+                    -gridCount * gridSize, i * gridSize, 0,
+                    gridCount * gridSize, i * gridSize, 0,
+                    `rgba(101, 67, 33, ${alpha})`, lineWidth
+                );
+            }
+            
+            drawLine3D(0, 0, 0, 150, 0, 0, '#FF0000', 4);
+            drawLine3D(0, 0, 0, 0, 150, 0, '#00FF00', 4);
+            drawLine3D(0, 0, 0, 0, 0, 150, '#0000FF', 4);
+            
+            if (showLabels) {
+                const axisLabelOffset = 170;
+                const xLabel = project3D(axisLabelOffset, 0, 0);
+                const yLabel = project3D(0, axisLabelOffset, 0);
+                const zLabel = project3D(0, 0, axisLabelOffset);
+                
+                ctx.font = 'bold 16px Arial';
+                ctx.fillStyle = '#FF0000';
+                ctx.fillText('X', xLabel.x, xLabel.y);
+                ctx.fillStyle = '#00FF00';
+                ctx.fillText('Y', yLabel.x, yLabel.y);
+                ctx.fillStyle = '#0000FF';
+                ctx.fillText('Z', zLabel.x, zLabel.y);
+            }
+        }
+
+        function setView(view) {
+            switch(view) {
+                case 'top':
+                    rotX = 5.5;
+                    rotY = -0.5;
+                    zoomLevel = 1.00;
+                    break;
+                case 'side':
+                    rotX = -90.0;
+                    rotY = -450.0;
+                    zoomLevel = 2.00;
+                    break;
+                case 'iso':
+                    rotX = -78.0;
+                    rotY = -9.0;
+                    zoomLevel = 1.00;
+                    break;
+            }
+            document.getElementById('zoom-slider').value = zoomLevel;
+            document.getElementById('zoom-val').textContent = Math.round(zoomLevel * 100) + '%';
+            draw();
+        }
+
+        function updateZoom() {
+            zoomLevel = parseFloat(document.getElementById('zoom-slider').value);
+            document.getElementById('zoom-val').textContent = Math.round(zoomLevel * 100) + '%';
+            draw();
+        }
+
+        function adjustZoom(delta) {
+            zoomLevel = Math.max(0.5, Math.min(2.0, zoomLevel + delta));
+            document.getElementById('zoom-slider').value = zoomLevel;
+            document.getElementById('zoom-val').textContent = Math.round(zoomLevel * 100) + '%';
+            draw();
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                rotY += deltaX * 0.5;
+                rotX += deltaY * 0.5;
+                
+                rotX = Math.max(-90, Math.min(90, rotX));
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            adjustZoom(delta);
+        });
+
+        initControls();
+        forwardKinematics();
+        updateDisplay();
+        draw();
+    </script>
+</body>
+</html>
