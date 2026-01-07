@@ -18,7 +18,7 @@
             padding: 20px;
             min-height: 100vh;
         }
- 
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -198,19 +198,22 @@
 
         .view-btn {
             flex: 1;
-            padding: 8px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: 2px solid #667eea;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 600;
             transition: all 0.2s;
         }
 
         .view-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
+            background: #764ba2;
+            border-color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
         }
 
         .toggle-labels {
@@ -229,7 +232,15 @@
             height: 16px;
             cursor: pointer;
         }
- 
+
+        #link-length-controls {
+            display: none;
+        }
+
+        #link-length-controls.visible {
+            display: block;
+        }
+
         @media (max-width: 1200px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -357,162 +368,18 @@
                 </div>
 
                 <h2>Link Lengths (mm)</h2>
+                <div class="toggle-labels">
+                    <input type="checkbox" id="edit-lengths" onchange="toggleLinkLengths()">
+                    <label for="edit-lengths" style="cursor: pointer; margin: 0;">Edit Lengths</label>
+                </div>
                 <div id="link-length-controls"></div>
 
-                <h2>DH Parameters</h2>
-                <div class="info-box" style="font-size: 10px; font-family: 'Courier New', monospace; overflow-x: auto;">
-                    <table id="dh-table" style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-                        <thead>
-                            <tr style="background: #667eea; color: white;">
-                                <th style="padding: 6px; border: 1px solid #ddd;">i</th>
-                                <th style="padding: 6px; border: 1px solid #ddd;">θ Input</th>
-                                <th style="padding: 6px; border: 1px solid #ddd;">θ DH</th>
-                                <th style="padding: 6px; border: 1px solid #ddd;">d (mm)</th>
-                                <th style="padding: 6px; border: 1px solid #ddd;">a (mm)</th>
-                                <th style="padding: 6px; border: 1px solid #ddd;">α (deg)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dh-tbody" style="background: white;">
-                        </tbody>
-                    </table>
-                    <div style="margin-top: 10px; font-size: 9px; line-height: 1.6; color: #666;">
-                        <strong>Legend:</strong><br>
-                        <span style="background: #e6f3ff; padding: 2px 4px; border: 1px solid #ddd;">Blue</span> = Joint angle from slider (θ Input)<br>
-                        <span style="background: #ffffcc; padding: 2px 4px; border: 1px solid #ddd;">Yellow</span> = DH angle (θ DH = θ Input + offset)<br>
-                        <span style="background: #ccffcc; padding: 2px 4px; border: 1px solid #ddd;">Green</span> = Fixed link length<br>
-                        <span style="background: white; padding: 2px 4px; border: 1px solid #ddd;">White</span> = Constant (0 or 90°)
-                    </div>
-                    <div style="margin-top: 10px; font-size: 9px; line-height: 1.6; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px;">
-                        <strong>Understanding θ (Theta):</strong><br>
-                        • <strong>θ Input</strong>: The angle you set with the slider (0° to 180°)<br>
-                        • <strong>θ DH</strong>: The actual DH parameter used in calculations<br>
-                        • For J1: θ DH = θ Input (no offset)<br>
-                        • For J2-J6: θ DH = θ Input - 90° (offset for neutral position)<br><br>
-                        <strong>Other DH Parameters:</strong><br>
-                        • <strong>d</strong>: Link offset along Z-axis<br>
-                        • <strong>a</strong>: Link length along X-axis<br>
-                        • <strong>α</strong>: Link twist around X-axis (constant)
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Kinematics Explanation Section -->
-    <div class="explanation-section">
-        <h2>Understanding 6-DOF Robotic Arm Kinematics</h2>
-        
-        <h3>1. What is Forward Kinematics?</h3>
-        <p>
-            Forward Kinematics (FK) is the process of calculating the position and orientation of the robot's end effector 
-            (gripper/tool) given the joint angles. In a 6-DOF (Degrees of Freedom) robotic arm, we have 6 joints that can move independently.
-        </p>
 
-        <h3>2. Joint Configuration</h3>
-        <p>Our 6-DOF arm consists of:</p>
-        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
-            <li><strong>J1 (Base Rotation):</strong> Rotates the entire arm around the vertical Z-axis (yaw)</li>
-            <li><strong>J2 (Shoulder):</strong> Lifts/lowers the arm (pitch)</li>
-            <li><strong>J3 (Elbow):</strong> Bends the arm at the elbow (pitch)</li>
-            <li><strong>J4 (Wrist Pitch):</strong> Tilts the wrist up/down (pitch)</li>
-            <li><strong>J5 (Wrist Roll):</strong> Rotates the wrist (roll)</li>
-            <li><strong>J6 (Gripper):</strong> Rotates the end effector/gripper</li>
-        </ul>
-
-        <h3>3. The Mathematics Behind FK</h3>
-        <p>
-            The forward kinematics calculation uses trigonometry to compute the end effector position. 
-            Each joint contributes to the final position based on its angle and the length of the link it controls.
-        </p>
-
-        <div class="formula">
-            <strong>Key Principle:</strong> Each joint only affects the segments that come AFTER it in the kinematic chain.
-            <br><br>
-            For example:
-            <ul style="margin-left: 20px; margin-top: 10px;">
-                <li>Moving J1 rotates the ENTIRE arm horizontally</li>
-                <li>Moving J2 affects everything from J2 onwards (but NOT J1)</li>
-                <li>Moving J3 affects everything from J3 onwards (but NOT J1 or J2)</li>
-                <li>And so on...</li>
-            </ul>
-        </div>
-
-        <h3>4. Position Calculation</h3>
-        <p>The end effector position is calculated using these formulas:</p>
-        
-        <pre><code>// Adjust angles (90° = neutral position for pitch joints)
-θ2_adj = θ2 - 90°
-θ3_adj = θ3 - 90°
-θ4_adj = θ4 - 90°
-θ5_adj = θ5 - 90°
-
-// Calculate horizontal reach (in XY plane)
-r = L1×cos(θ2_adj) + L2×cos(θ2_adj + θ3_adj) + 
-    L3×cos(θ2_adj + θ3_adj + θ4_adj) + 
-    L4×cos(θ2_adj + θ3_adj + θ4_adj + θ5_adj)
-
-// Final 3D position
-X = r × cos(θ1)
-Y = r × sin(θ1)
-Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) + 
-    L3×sin(θ2_adj + θ3_adj + θ4_adj) + 
-    L4×sin(θ2_adj + θ3_adj + θ4_adj + θ5_adj)</code></pre>
-
-        <h3>5. Understanding the Coordinate System</h3>
-        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
-            <li><strong>X-axis (Red):</strong> Points to the right</li>
-            <li><strong>Y-axis (Green):</strong> Points forward</li>
-            <li><strong>Z-axis (Blue):</strong> Points upward</li>
-            <li><strong>Origin:</strong> At the base of the robot on the ground</li>
-        </ul>
-
-        <h3>6. Angle Conventions</h3>
-        <p>
-            <strong>J1 (Base Rotation):</strong>
-            <br>
-            • 0° = Arm points along <strong>+X axis</strong> (to the right)
-            <br>
-            • 90° = Arm points along <strong>+Y axis</strong> (forward)
-            <br>
-            • 180° = Arm points along <strong>-X axis</strong> (to the left)
-            <br>
-            • 270° = Arm points along <strong>-Y axis</strong> (backward)
-            <br><br>
-            <strong>J2-J6 (Pitch joints):</strong> 90° is the neutral/straight position. 
-            <br>
-            • <strong>0° = Points DOWNWARD</strong> (below horizontal)
-            <br>
-            • <strong>90° = Points HORIZONTAL</strong> (straight out, neutral position)
-            <br>
-            • <strong>180° = Points UPWARD</strong> (above horizontal)
-            <br><br>
-            <em>Note: For J2 (shoulder), 0° makes the arm hang down, 90° extends horizontally, 180° points up.</em>
-        </p>
-
-        <h3>7. Practical Applications</h3>
-        <p>
-            Understanding FK is crucial for:
-        </p>
-        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
-            <li>Path planning and trajectory generation</li>
-            <li>Collision detection and avoidance</li>
-            <li>Workspace analysis (determining reachable positions)</li>
-            <li>Inverse kinematics validation</li>
-            <li>Robot simulation and visualization</li>
-        </ul>
-
-        <h3>8. Try It Yourself!</h3>
-        <p>
-            Use the simulator above to experiment with different joint angles and observe how they affect the end effector position. 
-            Notice how:
-        </p>
-        <ul style="margin-left: 20px; line-height: 1.8; color: #555;">
-            <li>J1 rotates the arm in a circle (changes X and Y, but not Z)</li>
-            <li>J2 primarily affects the height (Z) and horizontal reach</li>
-            <li>J3 and J4 fine-tune the position and orientation</li>
-            <li>J5 and J6 control the end effector orientation</li>
-        </ul>
-    </div>
 
     <script>
         const canvas = document.getElementById('canvas');
@@ -600,6 +467,16 @@ Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) +
             draw();
         }
 
+        function toggleLinkLengths() {
+            const checkbox = document.getElementById('edit-lengths');
+            const container = document.getElementById('link-length-controls');
+            if (checkbox.checked) {
+                container.classList.add('visible');
+            } else {
+                container.classList.remove('visible');
+            }
+        }
+
         function forwardKinematics() {
             const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints.map(deg2rad);
             const [l0, l1, l2, l3, l4, l5] = arm.lengths;
@@ -617,10 +494,10 @@ Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) +
                       l4 * Math.cos(θ2_adj + θ3_adj + θ4_adj + θ5_adj);
             
             // Rotate by base angle θ1
-            // θ1 = 0° points along +X axis
-            // θ1 = 90° points along +Y axis
-            arm.endEffector.x = r * Math.cos(θ1);
-            arm.endEffector.y = r * Math.sin(θ1);
+            // θ1 = 0° points along +Y axis
+            // θ1 = 90° points along +X axis
+            arm.endEffector.x = r * Math.sin(θ1);
+            arm.endEffector.y = r * Math.cos(θ1);
             arm.endEffector.z = l0 + 
                                 l1 * Math.sin(θ2_adj) + 
                                 l2 * Math.sin(θ2_adj + θ3_adj) + 
@@ -644,98 +521,8 @@ Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) +
                 arm.endEffector.z ** 2
             );
             document.getElementById('pos-dist').textContent = dist.toFixed(2) + ' mm';
-            
-            updateDHTable();
         }
 
-        function updateDHTable() {
-            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
-            const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints;
-            
-            const dhParams = [
-                { i: 1, thetaInput: θ1, thetaOffset: 0, thetaDH: θ1, d: l0, a: 0, alpha: 90 },
-                { i: 2, thetaInput: θ2, thetaOffset: -90, thetaDH: θ2 - 90, d: 0, a: l1, alpha: 0 },
-                { i: 3, thetaInput: θ3, thetaOffset: -90, thetaDH: θ3 - 90, d: 0, a: l2, alpha: 0 },
-                { i: 4, thetaInput: θ4, thetaOffset: -90, thetaDH: θ4 - 90, d: 0, a: l3, alpha: 0 },
-                { i: 5, thetaInput: θ5, thetaOffset: -90, thetaDH: θ5 - 90, d: 0, a: l4, alpha: 0 },
-                { i: 6, thetaInput: θ6, thetaOffset: -90, thetaDH: θ6 - 90, d: 0, a: l5, alpha: 0 }
-            ];
-            
-            const tbody = document.getElementById('dh-tbody');
-            tbody.innerHTML = '';
-            
-            dhParams.forEach((param, index) => {
-                const row = tbody.insertRow();
-                row.style.borderBottom = '1px solid #ddd';
-                
-                // Joint number
-                const cellI = row.insertCell();
-                cellI.textContent = param.i;
-                cellI.style.padding = '6px';
-                cellI.style.textAlign = 'center';
-                cellI.style.border = '1px solid #ddd';
-                cellI.style.fontWeight = 'bold';
-                cellI.style.background = '#f0f0f0';
-                
-                // Theta Input (from slider)
-                const cellThetaInput = row.insertCell();
-                cellThetaInput.textContent = param.thetaInput.toFixed(1) + '°';
-                cellThetaInput.style.padding = '6px';
-                cellThetaInput.style.textAlign = 'right';
-                cellThetaInput.style.border = '1px solid #ddd';
-                cellThetaInput.style.background = '#e6f3ff'; // Light blue for input
-                cellThetaInput.style.fontWeight = 'bold';
-                
-                // Theta DH (calculated: input + offset)
-                const cellThetaDH = row.insertCell();
-                if (index === 0) {
-                    cellThetaDH.textContent = param.thetaDH.toFixed(2) + '°';
-                } else {
-                    cellThetaDH.innerHTML = `${param.thetaDH.toFixed(2)}°<br><span style="font-size: 8px; color: #666;">(${param.thetaInput.toFixed(0)}°${param.thetaOffset}°)</span>`;
-                }
-                cellThetaDH.style.padding = '6px';
-                cellThetaDH.style.textAlign = 'right';
-                cellThetaDH.style.border = '1px solid #ddd';
-                cellThetaDH.style.background = '#ffffcc'; // Yellow for DH value
-                cellThetaDH.style.fontWeight = 'bold';
-                cellThetaDH.style.fontSize = '10px';
-                cellThetaDH.style.lineHeight = '1.3';
-                
-                // d (fixed for J2-J6, variable for J1)
-                const cellD = row.insertCell();
-                cellD.textContent = param.d.toFixed(2);
-                cellD.style.padding = '6px';
-                cellD.style.textAlign = 'right';
-                cellD.style.border = '1px solid #ddd';
-                if (index === 0) {
-                    cellD.style.background = '#ccffcc'; // Green for fixed link length
-                    cellD.style.fontWeight = 'bold';
-                } else {
-                    cellD.style.background = 'white';
-                }
-                
-                // a (fixed - link length)
-                const cellA = row.insertCell();
-                cellA.textContent = param.a.toFixed(2);
-                cellA.style.padding = '6px';
-                cellA.style.textAlign = 'right';
-                cellA.style.border = '1px solid #ddd';
-                if (param.a > 0) {
-                    cellA.style.background = '#ccffcc'; // Green for fixed link length
-                    cellA.style.fontWeight = 'bold';
-                } else {
-                    cellA.style.background = 'white';
-                }
-                
-                // Alpha (constant)
-                const cellAlpha = row.insertCell();
-                cellAlpha.textContent = param.alpha.toFixed(2);
-                cellAlpha.style.padding = '6px';
-                cellAlpha.style.textAlign = 'right';
-                cellAlpha.style.border = '1px solid #ddd';
-                cellAlpha.style.background = 'white';
-            });
-        }
 
         function homePosition() {
             // Home position: all joints at 90° (horizontal, pointing along +Y)
@@ -750,64 +537,69 @@ Z = L0 + L1×sin(θ2_adj) + L2×sin(θ2_adj + θ3_adj) +
             const [l0, l1, l2, l3, l4, l5] = arm.lengths;
             const [θ1, θ2, θ3, θ4, θ5, θ6] = arm.joints;
             
-            console.log('\n========================================');
-            console.log('DENAVIT-HARTENBERG PARAMETERS');
-            console.log('========================================');
-            console.log('Modified DH Convention');
-            console.log('');
-            console.log('Current Joint Angles:');
-            console.log(`  J1 = ${θ1}°`);
-            console.log(`  J2 = ${θ2}°`);
-            console.log(`  J3 = ${θ3}°`);
-            console.log(`  J4 = ${θ4}°`);
-            console.log(`  J5 = ${θ5}°`);
-            console.log(`  J6 = ${θ6}°`);
-            console.log('');
-            console.log('DH Parameters Table:');
-            console.log('┌────┬────────────┬────────────┬────────────┬────────────┐');
-            console.log('│ i  │  θ (deg)   │  d (mm)    │  a (mm)    │  α (deg)   │');
-            console.log('├────┼────────────┼────────────┼────────────┼────────────┤');
-            console.log(`│ 1  │ ${θ1.toFixed(2).padStart(10)} │ ${l0.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${(90).toFixed(2).padStart(10)} │`);
-            console.log(`│ 2  │ ${(θ2-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l1.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
-            console.log(`│ 3  │ ${(θ3-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l2.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
-            console.log(`│ 4  │ ${(θ4-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l3.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
-            console.log(`│ 5  │ ${(θ5-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l4.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
-            console.log(`│ 6  │ ${(θ6-90).toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │ ${l5.toFixed(2).padStart(10)} │ ${(0).toFixed(2).padStart(10)} │`);
-            console.log('└────┴────────────┴────────────┴────────────┴────────────┘');
-            console.log('');
-            console.log('Parameter Definitions:');
-            console.log('  θ (theta) = Joint angle (rotation about Z-axis)');
-            console.log('  d         = Link offset (translation along Z-axis)');
-            console.log('  a         = Link length (translation along X-axis)');
-            console.log('  α (alpha) = Link twist (rotation about X-axis)');
-            console.log('');
-            console.log('Python/NumPy Format:');
-            console.log('import numpy as np');
-            console.log('');
-            console.log('dh_params = np.array([');
-            console.log(`    [${θ1.toFixed(2)}, ${l0.toFixed(2)}, 0.00, 90.00],   # Joint 1`);
-            console.log(`    [${(θ2-90).toFixed(2)}, 0.00, ${l1.toFixed(2)}, 0.00],    # Joint 2`);
-            console.log(`    [${(θ3-90).toFixed(2)}, 0.00, ${l2.toFixed(2)}, 0.00],    # Joint 3`);
-            console.log(`    [${(θ4-90).toFixed(2)}, 0.00, ${l3.toFixed(2)}, 0.00],    # Joint 4`);
-            console.log(`    [${(θ5-90).toFixed(2)}, 0.00, ${l4.toFixed(2)}, 0.00],    # Joint 5`);
-            console.log(`    [${(θ6-90).toFixed(2)}, 0.00, ${l5.toFixed(2)}, 0.00]     # Joint 6`);
-            console.log('])');
-            console.log('');
-            console.log('MATLAB Format:');
-            console.log('DH = [');
-            console.log(`    ${θ1.toFixed(2)}, ${l0.toFixed(2)}, 0.00, 90.00;   % Joint 1`);
-            console.log(`    ${(θ2-90).toFixed(2)}, 0.00, ${l1.toFixed(2)}, 0.00;    % Joint 2`);
-            console.log(`    ${(θ3-90).toFixed(2)}, 0.00, ${l2.toFixed(2)}, 0.00;    % Joint 3`);
-            console.log(`    ${(θ4-90).toFixed(2)}, 0.00, ${l3.toFixed(2)}, 0.00;    % Joint 4`);
-            console.log(`    ${(θ5-90).toFixed(2)}, 0.00, ${l4.toFixed(2)}, 0.00;    % Joint 5`);
-            console.log(`    ${(θ6-90).toFixed(2)}, 0.00, ${l5.toFixed(2)}, 0.00     % Joint 6`);
-            console.log('];');
-            console.log('');
-            console.log('End Effector Position (from FK):');
-            console.log(`  X = ${arm.endEffector.x.toFixed(2)} mm`);
-            console.log(`  Y = ${arm.endEffector.y.toFixed(2)} mm`);
-            console.log(`  Z = ${arm.endEffector.z.toFixed(2)} mm`);
-            console.log('========================================\n');
+            // Create modal overlay
+            const modalHTML = `
+                <div id="dh-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="margin: 0; color: #667eea;">DH Parameters (Python Format)</h2>
+                            <button onclick="document.getElementById('dh-modal').remove()" style="background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 16px;">×</button>
+                        </div>
+                        <pre style="background: #f5f5f5; padding: 15px; border-radius: 6px; overflow-x: auto; border-left: 4px solid #667eea; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5; color: #333;">import numpy as np
+
+# Current Joint Angles (degrees)
+J1 = ${θ1.toFixed(2)}
+J2 = ${θ2.toFixed(2)}
+J3 = ${θ3.toFixed(2)}
+J4 = ${θ4.toFixed(2)}
+J5 = ${θ5.toFixed(2)}
+J6 = ${θ6.toFixed(2)}
+
+# Link Lengths (mm)
+L0 = ${l0.toFixed(2)}
+L1 = ${l1.toFixed(2)}
+L2 = ${l2.toFixed(2)}
+L3 = ${l3.toFixed(2)}
+L4 = ${l4.toFixed(2)}
+L5 = ${l5.toFixed(2)}
+
+# Denavit-Hartenberg Parameters
+dh_params = [
+    # Joint 1: theta1_DH = theta1_cmd - 90°
+    {'d': ${l0.toFixed(2)}, 'a': 0, 'alpha': 90, 'theta_offset': -90},
+    
+    # Joint 2: theta2_DH = theta2_cmd - 90°
+    {'d': 0, 'a': ${l1.toFixed(2)}, 'alpha': 0, 'theta_offset': -90},
+    
+    # Joint 3: theta3_DH = theta3_cmd - 90°
+    {'d': 0, 'a': ${l2.toFixed(2)}, 'alpha': 0, 'theta_offset': -90},
+    
+    # Joint 4: theta4_DH = theta4_cmd - 90°
+    {'d': 0, 'a': ${l3.toFixed(2)}, 'alpha': 0, 'theta_offset': -90},
+    
+    # Joint 5: theta5_DH = theta5_cmd - 90°
+    {'d': 0, 'a': ${l4.toFixed(2)}, 'alpha': 0, 'theta_offset': -90},
+    
+    # Joint 6: theta6_DH = theta6_cmd - 90°
+    {'d': 0, 'a': ${l5.toFixed(2)}, 'alpha': 0, 'theta_offset': -90},
+]
+
+# End Effector Position
+X = ${arm.endEffector.x.toFixed(2)}  # mm
+Y = ${arm.endEffector.y.toFixed(2)}  # mm
+Z = ${arm.endEffector.z.toFixed(2)}  # mm</pre>
+                        <div style="margin-top: 15px; font-size: 12px; color: #666; background: #f9f9f9; padding: 12px; border-radius: 6px;">
+                            <strong>Parameter Legend:</strong><br>
+                            • <strong>theta</strong>: Joint angle (degrees)<br>
+                            • <strong>d</strong>: Link offset along Z-axis (mm)<br>
+                            • <strong>a</strong>: Link length along X-axis (mm)<br>
+                            • <strong>alpha</strong>: Link twist around X-axis (degrees)
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
 
         function project3D(x, y, z) {
