@@ -341,7 +341,7 @@
                     <label for="edit-lengths" style="cursor: pointer; margin: 0;">Edit Lengths</label>
                 </div>
                 <div id="link-length-controls"></div>
-                <div class="info-box" style="margin-top: 10px;">
+                <div class="info-box" style="margin-top: 10px;display:none" >
                     <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #667eea;">End Effector Position</div>
                     <div class="info-row">
                         <span class="info-label">X:</span>
@@ -1055,6 +1055,13 @@ Z = ${arm.endEffector.z.toFixed(2)}  # mm</pre>
             ctx.fillText(`X: ${arm.endEffector.x.toFixed(1)} mm`, 20, 30);
             ctx.fillText(`Y: ${arm.endEffector.y.toFixed(1)} mm`, 20, 50);
             ctx.fillText(`Z: ${arm.endEffector.z.toFixed(1)} mm`, 20, 70);
+            
+            const reach = Math.sqrt(
+                arm.endEffector.x ** 2 + 
+                arm.endEffector.y ** 2 + 
+                arm.endEffector.z ** 2
+            );
+            ctx.fillText(`Reach: ${reach.toFixed(1)} mm`, 20, 90);
         }
 
         function drawGrid() {
