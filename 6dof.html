@@ -488,6 +488,12 @@
             document.getElementById(`j${index + 1}-val`).textContent = arm.joints[index] + '°';
             forwardKinematics();
             updateDisplay();
+            
+            // Update IK textboxes with current end effector position
+            document.getElementById('ik-x').value = arm.endEffector.x.toFixed(1);
+            document.getElementById('ik-y').value = arm.endEffector.y.toFixed(1);
+            document.getElementById('ik-z').value = arm.endEffector.z.toFixed(1);
+            
             draw();
         }
 
