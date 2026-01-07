@@ -336,20 +336,13 @@
                     <input type="checkbox" id="show-lengths" onchange="draw()">
                     <label for="show-lengths" style="cursor: pointer; margin: 0;">Show Link Lengths</label>
                 </div>
-                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
-                    <label style="font-size: 12px; font-weight: 600; margin-bottom: 5px; display: block;">Zoom: <span id="zoom-val">100%</span></label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="view-btn" onclick="adjustZoom(-0.1)" style="flex: 0;">-</button>
-                        <input type="range" id="zoom-slider" min="0.5" max="2.0" value="1.0" step="0.1" oninput="updateZoom()" style="flex: 1;">
-                        <button class="view-btn" onclick="adjustZoom(0.1)" style="flex: 0;">+</button>
-                    </div>
+                <div class="toggle-labels">
+                    <input type="checkbox" id="edit-lengths" onchange="toggleLinkLengths()">
+                    <label for="edit-lengths" style="cursor: pointer; margin: 0;">Edit Lengths</label>
                 </div>
-            </div>
-
-            <!-- Right Panel: Info -->
-            <div class="panel">
-                <h2>End Effector Position</h2>
-                <div class="info-box">
+                <div id="link-length-controls"></div>
+                <div class="info-box" style="margin-top: 10px;">
+                    <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #667eea;">End Effector Position</div>
                     <div class="info-row">
                         <span class="info-label">X:</span>
                         <span class="info-value" id="pos-x">0.00 mm</span>
@@ -367,21 +360,17 @@
                         <span class="info-value" id="pos-dist">0.00 mm</span>
                     </div>
                 </div>
-
-                <h2>Link Lengths (mm)</h2>
-                <div class="toggle-labels">
-                    <input type="checkbox" id="edit-lengths" onchange="toggleLinkLengths()">
-                    <label for="edit-lengths" style="cursor: pointer; margin: 0;">Edit Lengths</label>
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                    <label style="font-size: 12px; font-weight: 600; margin-bottom: 5px; display: block;">Zoom: <span id="zoom-val">100%</span></label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="view-btn" onclick="adjustZoom(-0.1)" style="flex: 0;">-</button>
+                        <input type="range" id="zoom-slider" min="0.5" max="2.0" value="1.0" step="0.1" oninput="updateZoom()" style="flex: 1;">
+                        <button class="view-btn" onclick="adjustZoom(0.1)" style="flex: 0;">+</button>
+                    </div>
                 </div>
-                <div id="link-length-controls"></div>
-
-
             </div>
-        </div>
 
-        <!-- IK Simulation Section -->
-        <div class="main-content" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
-            <!-- IK Input Panel -->
+            <!-- Right Panel: IK Controls -->
             <div class="panel">
                 <h2>Inverse Kinematics</h2>
                 <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Set desired end effector position to compute joint angles</p>
@@ -410,37 +399,6 @@
 
                 <h3 style="font-size: 14px; margin-top: 20px; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Computed Joint Angles</h3>
                 <div id="ik-joint-display" style="margin-top: 12px;"></div>
-            </div>
-
-            <!-- IK Visualization Panel -->
-            <div class="panel">
-                <h2>IK Solution Information</h2>
-                
-                <div class="info-box">
-                    <div style="font-size: 12px; line-height: 1.8; color: #555;">
-                        <p><strong>How to use:</strong></p>
-                        <ol style="margin-left: 20px; margin-top: 10px;">
-                            <li>Enter desired X, Y, Z coordinates for the end effector</li>
-                            <li>The simulator automatically computes the required joint angles</li>
-                            <li>The 3D visualization updates in real-time</li>
-                            <li>All computed angles are displayed and applied to the robot</li>
-                        </ol>
-                    </div>
-                </div>
-
-                <div class="info-box" style="margin-top: 15px;">
-                    <p style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">IK Solver Details:</p>
-                    <ul style="font-size: 11px; line-height: 1.8; margin-left: 20px; color: #666;">
-                        <li><strong>J1:</strong> Computed from X,Y using atan2</li>
-                        <li><strong>J2-J5:</strong> Solved using numerical method for 2D reach</li>
-                        <li><strong>J6:</strong> Independent gripper rotation (stays at 90°)</li>
-                        <li><strong>Workspace Check:</strong> Validates if target is reachable</li>
-                    </ul>
-                </div>
-
-                <div class="info-box" style="margin-top: 15px; background: #fff3cd; border-left-color: #ffc107;">
-                    <p style="font-size: 11px; color: #856404;"><strong>Note:</strong> IK solutions may not be exact due to numerical approximation. The solver uses gradient descent to find joint angles that best reach the target position.</p>
-                </div>
             </div>
         </div>
     </div>
@@ -645,7 +603,14 @@
                 document.getElementById('ik-status').style.color = '#28a745';
                 
                 // Update FK sliders and visualization
-                initControls();
+                for (let i = 0; i < 6; i++) {
+                    const slider = document.getElementById(`j${i+1}`);
+                    if (slider) {
+                        slider.value = arm.joints[i];
+                        document.getElementById(`j${i+1}-val`).textContent = arm.joints[i].toFixed(1) + '°';
+                    }
+                }
+                
                 forwardKinematics();
                 updateDisplay();
                 draw();
@@ -1082,6 +1047,14 @@ Z = ${arm.endEffector.z.toFixed(2)}  # mm</pre>
             const lastPos = positions[positions.length - 1];
             drawJoint(lastPos.x, lastPos.y, lastPos.z, 14, '#FF4757');
             drawLabel(lastPos.x, lastPos.y, lastPos.z, 'END', '#FF4757');
+            
+            // Draw end effector position on canvas
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'left';
+            ctx.fillText(`X: ${arm.endEffector.x.toFixed(1)} mm`, 20, 30);
+            ctx.fillText(`Y: ${arm.endEffector.y.toFixed(1)} mm`, 20, 50);
+            ctx.fillText(`Z: ${arm.endEffector.z.toFixed(1)} mm`, 20, 70);
         }
 
         function drawGrid() {
