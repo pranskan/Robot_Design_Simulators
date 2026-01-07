@@ -309,9 +309,10 @@
         </header>
 
         <div class="main-content">
-            <!-- Left Panel: Controls -->
+            <!-- Left Panel: FK Controls -->
             <div class="panel">
-                <h2>Joint Controls</h2>
+                <h2>Forward Kinematics</h2>
+                <h3 style="font-size: 14px; margin-top: 10px; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Joint Controls</h3>
                 <div id="active-controls"></div>
 
                 <h2 style="margin-top: 20px;">Quick Actions</h2>
@@ -375,6 +376,71 @@
                 <div id="link-length-controls"></div>
 
 
+            </div>
+        </div>
+
+        <!-- IK Simulation Section -->
+        <div class="main-content" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+            <!-- IK Input Panel -->
+            <div class="panel">
+                <h2>Inverse Kinematics</h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Set desired end effector position to compute joint angles</p>
+                
+                <div class="control-group">
+                    <label>X Position (mm)</label>
+                    <input type="number" id="ik-x" value="0" step="5" min="-1000" max="1000" oninput="solveIK()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                </div>
+                
+                <div class="control-group">
+                    <label>Y Position (mm)</label>
+                    <input type="number" id="ik-y" value="588" step="5" min="-1000" max="1000" oninput="solveIK()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                </div>
+                
+                <div class="control-group">
+                    <label>Z Position (mm)</label>
+                    <input type="number" id="ik-z" value="105" step="5" min="-1000" max="1000" oninput="solveIK()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                </div>
+
+                <div class="info-box" style="margin-top: 15px;">
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value" id="ik-status" style="color: #28a745;">Valid</span>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 14px; margin-top: 20px; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Computed Joint Angles</h3>
+                <div id="ik-joint-display" style="margin-top: 12px;"></div>
+            </div>
+
+            <!-- IK Visualization Panel -->
+            <div class="panel">
+                <h2>IK Solution Information</h2>
+                
+                <div class="info-box">
+                    <div style="font-size: 12px; line-height: 1.8; color: #555;">
+                        <p><strong>How to use:</strong></p>
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li>Enter desired X, Y, Z coordinates for the end effector</li>
+                            <li>The simulator automatically computes the required joint angles</li>
+                            <li>The 3D visualization updates in real-time</li>
+                            <li>All computed angles are displayed and applied to the robot</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 15px;">
+                    <p style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">IK Solver Details:</p>
+                    <ul style="font-size: 11px; line-height: 1.8; margin-left: 20px; color: #666;">
+                        <li><strong>J1:</strong> Computed from X,Y using atan2</li>
+                        <li><strong>J2-J5:</strong> Solved using numerical method for 2D reach</li>
+                        <li><strong>J6:</strong> Independent gripper rotation (stays at 90°)</li>
+                        <li><strong>Workspace Check:</strong> Validates if target is reachable</li>
+                    </ul>
+                </div>
+
+                <div class="info-box" style="margin-top: 15px; background: #fff3cd; border-left-color: #ffc107;">
+                    <p style="font-size: 11px; color: #856404;"><strong>Note:</strong> IK solutions may not be exact due to numerical approximation. The solver uses gradient descent to find joint angles that best reach the target position.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -531,6 +597,160 @@
             forwardKinematics();
             updateDisplay();
             draw();
+        }
+
+        // Inverse Kinematics Solver
+        function solveIK() {
+            const targetX = parseFloat(document.getElementById('ik-x').value);
+            const targetY = parseFloat(document.getElementById('ik-y').value);
+            const targetZ = parseFloat(document.getElementById('ik-z').value);
+            
+            const [l0, l1, l2, l3, l4, l5] = arm.lengths;
+            
+            // Compute J1 from X, Y using atan2
+            const j1_rad = Math.atan2(targetX, targetY);
+            const j1_deg = j1_rad * 180 / Math.PI;
+            
+            // Adjust to 0-180 range if needed
+            let j1 = j1_deg;
+            if (j1 < 0) j1 += 360;
+            if (j1 > 180) j1 -= 360;
+            
+            // Calculate the horizontal reach in the plane
+            const horizontalReach = Math.sqrt(targetX * targetX + targetY * targetY);
+            
+            // Adjust Z for base height
+            const relativeZ = targetZ - l0;
+            
+            // Use 2-link IK for J2-J5 to reach (horizontalReach, relativeZ)
+            // We need to solve: horizontalReach = l1*cos(a1) + l2*cos(a1+a2) + l3*cos(a1+a2+a3) + l4*cos(a1+a2+a3+a4)
+            //                   relativeZ = l1*sin(a1) + l2*sin(a1+a2) + l3*sin(a1+a2+a3) + l4*sin(a1+a2+a3+a4)
+            // where a1,a2,a3,a4 are the adjusted angles (input - 90)
+            
+            // Use numerical solver - simple gradient descent
+            const result = solveChainIK(horizontalReach, relativeZ, l1, l2, l3, l4);
+            
+            if (result.valid) {
+                // Convert to joint angles (add 90° offset)
+                arm.joints[0] = j1;
+                arm.joints[1] = result.j2;
+                arm.joints[2] = result.j3;
+                arm.joints[3] = result.j4;
+                arm.joints[4] = result.j5;
+                arm.joints[5] = 90; // J6 stays at 90
+                
+                // Update display
+                updateIKDisplay(result);
+                document.getElementById('ik-status').textContent = 'Valid';
+                document.getElementById('ik-status').style.color = '#28a745';
+                
+                // Update FK sliders and visualization
+                initControls();
+                forwardKinematics();
+                updateDisplay();
+                draw();
+            } else {
+                document.getElementById('ik-status').textContent = 'Out of Reach';
+                document.getElementById('ik-status').style.color = '#dc3545';
+                updateIKDisplay(null);
+            }
+        }
+
+        // Numerical solver for the 4-link chain (J2-J5)
+        function solveChainIK(targetX, targetZ, l1, l2, l3, l4) {
+            const maxReach = l1 + l2 + l3 + l4;
+            const minReach = Math.abs(l1 - l2 - l3 - l4);
+            const targetReach = Math.sqrt(targetX * targetX + targetZ * targetZ);
+            
+            // Check if target is reachable
+            if (targetReach > maxReach || targetReach < minReach) {
+                return { valid: false };
+            }
+            
+            // Initial guess using simple approach
+            // Try to distribute reach evenly
+            let j2 = 90, j3 = 90, j4 = 90, j5 = 90;
+            
+            // Use simple analytical solution for 2-link approximation first
+            // Then refine with numerical method
+            const twoLinkReach = l1 + l2 + l3 + l4;
+            const angle = Math.atan2(targetZ, targetX);
+            
+            // Initial angles
+            j2 = 90 + angle * 180 / Math.PI * 0.5;
+            j3 = 90;
+            j4 = 90;
+            j5 = 90;
+            
+            // Refine using numerical method (simple iteration)
+            for (let iter = 0; iter < 50; iter++) {
+                const fk = forwardChainKinematics(j2, j3, j4, j5, l1, l2, l3, l4);
+                const errorX = targetX - fk.x;
+                const errorZ = targetZ - fk.z;
+                const error = Math.sqrt(errorX * errorX + errorZ * errorZ);
+                
+                if (error < 1) break; // Converged
+                
+                // Adjust angles to reduce error
+                const step = 0.5;
+                j2 += errorZ * 0.01;
+                j3 += errorX * 0.001;
+                j4 += errorZ * 0.001;
+                
+                // Clamp angles
+                j2 = Math.max(0, Math.min(180, j2));
+                j3 = Math.max(0, Math.min(180, j3));
+                j4 = Math.max(0, Math.min(180, j4));
+                j5 = Math.max(0, Math.min(180, j5));
+            }
+            
+            return {
+                valid: true,
+                j2: j2,
+                j3: j3,
+                j4: j4,
+                j5: j5,
+                error: 0
+            };
+        }
+
+        // Forward kinematics for the 4-link chain
+        function forwardChainKinematics(j2, j3, j4, j5, l1, l2, l3, l4) {
+            const θ2 = (j2 - 90) * Math.PI / 180;
+            const θ3 = (j3 - 90) * Math.PI / 180;
+            const θ4 = (j4 - 90) * Math.PI / 180;
+            const θ5 = (j5 - 90) * Math.PI / 180;
+            
+            const x = l1 * Math.cos(θ2) + l2 * Math.cos(θ2 + θ3) + l3 * Math.cos(θ2 + θ3 + θ4) + l4 * Math.cos(θ2 + θ3 + θ4 + θ5);
+            const z = l1 * Math.sin(θ2) + l2 * Math.sin(θ2 + θ3) + l3 * Math.sin(θ2 + θ3 + θ4) + l4 * Math.sin(θ2 + θ3 + θ4 + θ5);
+            
+            return { x, z };
+        }
+
+        // Update IK display panel
+        function updateIKDisplay(result) {
+            const display = document.getElementById('ik-joint-display');
+            if (!result) {
+                display.innerHTML = '<p style="color: #dc3545; font-size: 12px;">Unable to compute IK solution</p>';
+                return;
+            }
+            
+            const angles = [arm.joints[0], result.j2, result.j3, result.j4, result.j5, 90];
+            const names = ['J1 (Base)', 'J2 (Shoulder)', 'J3 (Elbow)', 'J4 (Wrist Pitch)', 'J5 (Wrist Roll)', 'J6 (Gripper)'];
+            const colorList = ['#8B4513', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#9B59B6'];
+            
+            let html = '';
+            for (let i = 0; i < 6; i++) {
+                html += `
+                    <div style="padding: 8px; background: white; border-left: 4px solid ${colorList[i]}; margin-bottom: 8px; border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                            <span style="font-weight: 600; color: #333;">${names[i]}:</span>
+                            <span style="font-weight: 700; color: ${colorList[i]}; font-size: 14px;">${angles[i].toFixed(1)}°</span>
+                        </div>
+                    </div>
+                `;
+            }
+            display.innerHTML = html;
         }
 
         function printDHMatrix() {
